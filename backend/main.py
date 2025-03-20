@@ -3,6 +3,7 @@ print(sys.path)
 
 from auth_email import router as auth_email_router  # Changed import
 from auth_phone import router as auth_phone_router # Changed import
+from security_dashboard import router as security_dashboard_router
 
 from pymongo import MongoClient
 from pydantic import BaseModel
@@ -59,7 +60,7 @@ app.add_middleware(
 # Include authentication routers
 app.include_router(auth_email_router, prefix="/auth/email", tags=["email_auth"])
 app.include_router(auth_phone_router, prefix="/auth/phone", tags=["phone_auth"])
-
+app.include_router(security_dashboard_router, prefix="/api")
 # Define a model for the incoming text
 class AnalysisRequest(BaseModel):
     text: str
