@@ -1,21 +1,35 @@
 import sys
 print(sys.path)
 
-from .auth_email import router as auth_email_router  # Changed import
-from .auth_phone import router as auth_phone_router # Changed import
+from auth_email import router as auth_email_router  # Changed import
+from auth_phone import router as auth_phone_router # Changed import
+
 from pymongo import MongoClient
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Depends
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
 from fastapi.responses import JSONResponse # Import JSONResponse
+import traceback
 
 # MongoDB connection function
 def get_db():
-    MONGO_URI = "mongodb://localhost:27017"
-    client = MongoClient(MONGO_URI)
-    db = client['cybershield_db']
-    return db
+    # Use the container name for Docker networking
+    MONGO_URI = "mongodb://cybershield-mongodb:27017"
+    print(f"Connecting to MongoDB at: {MONGO_URI}")
+    
+    try:
+        client = MongoClient(MONGO_URI)
+        db = client['cybershield_db']
+        
+        # Test the connection
+        client.admin.command('ping')
+        print("MongoDB connection successful in main.py")
+        
+        return db
+    except Exception as e:
+        print(f"MongoDB connection error in main.py: {e}")
+        raise HTTPException(status_code=500, detail=f"Database connection error: {str(e)}")
 
 app = FastAPI()
 
@@ -36,7 +50,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:3000", "http://cybershield-frontend"],    
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allow all headers
@@ -67,7 +81,7 @@ def detect_hate_speech(text: str) -> bool:
 
 # New endpoint for text analysis
 @app.post("/analyze", response_model=AnalysisResponse)
-async def analyze_text(request: AnalysisRequest, db: MongoClient = Depends(get_db)):
+async def analyze_text(request: AnalysisRequest, db = Depends(get_db)):
     try:
         is_hate_speech = detect_hate_speech(request.text)
 
@@ -86,6 +100,113 @@ async def analyze_text(request: AnalysisRequest, db: MongoClient = Depends(get_d
 @app.get("/")
 def home():
     return {"message": "Welcome to CyberShield AI"}
+
+# Add a direct logs checking endpoint
+@app.get("/direct-check-logs")
+async def direct_check_logs():
+    try:
+        # Connect directly to MongoDB in the container
+        client = MongoClient("mongodb://cybershield-mongodb:27017")
+        db = client['cybershield_db']
+        
+        # List all collections
+        collections = db.list_collection_names()
+        
+        # Check if login_logs exists
+        if "login_logs" not in collections:
+            db.create_collection("login_logs")
+            print("Created login_logs collection")
+        
+        login_logs_collection = db["login_logs"]
+        
+        # Insert a test document
+        test_doc = {
+            "email": "direct-test@example.com",
+            "timestamp": datetime.utcnow(),
+            "status": "test",
+            "source": "direct_endpoint"
+        }
+        
+        result = login_logs_collection.insert_one(test_doc)
+        
+        # Count documents
+        log_count = login_logs_collection.count_documents({})
+        
+        # Find logs
+        logs = list(login_logs_collection.find().sort("timestamp", -1).limit(10))
+        
+        # Format for response
+        formatted_logs = []
+        for log in logs:
+            formatted_log = {
+                "id": str(log.get("_id")),
+                "email": log.get("email", ""),
+                "timestamp": str(log.get("timestamp", "")),
+                "status": log.get("status", ""),
+                "reason": log.get("reason", ""),
+                "source": log.get("source", "")
+            }
+            formatted_logs.append(formatted_log)
+        
+        return {
+            "message": "Direct logs check completed",
+            "mongodb_uri": "mongodb://cybershield-mongodb:27017",
+            "database": "cybershield_db",
+            "collections": collections,
+            "login_logs_count": log_count,
+            "test_document_id": str(result.inserted_id),
+            "logs": formatted_logs
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@app.get("/logs", tags=["logs"])
+async def view_logs():
+    """Simple endpoint to view all logs."""
+    try:
+        # Connect directly to MongoDB
+        client = MongoClient("mongodb://cybershield-mongodb:27017")
+        db = client['cybershield_db']
+        
+        # Check if login_logs exists
+        collections = db.list_collection_names()
+        if "login_logs" not in collections:
+            return {"message": "No login_logs collection found", "collections": collections}
+        
+        # Get all logs
+        logs = list(db.login_logs.find().sort("timestamp", -1))
+        
+        # Format logs for response
+        formatted_logs = []
+        for log in logs:
+            formatted_logs.append({
+                "id": str(log.get("_id")),
+                "email": log.get("email", ""),
+                "timestamp": str(log.get("timestamp", "")),
+                "status": log.get("status", ""),
+                "reason": log.get("reason", ""),
+                "source": log.get("source", "")
+            })
+        
+        return {
+            "message": "Logs retrieved",
+            "count": len(formatted_logs),
+            "logs": formatted_logs
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Docker."""
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
