@@ -1,0 +1,63 @@
+services:
+  frontend:
+    build:
+      context: ./cybershield-react
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=/api
+    networks:
+      - cybershield-network
+    container_name: cybershield-frontend
+    
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=mongodb://cybershield-mongodb:27017/cybershield_db
+      # Update this to reference the correct path inside the container
+      - FIREBASE_CREDENTIALS=/app/cybershieldai-firebase-adminsdk-fbsvc-36a8d0d55c.json
+    volumes:
+      - ./backend:/app 
+      # Remove this line - the file is already in the backend directory which we're mounting as /app
+      # - ./cybershieldai-firebase-adminsdk-fbsvc-36a8d0d55c.json:/app/cybershieldai-firebase-adminsdk-fbsvc-36a8d0d55c.json 
+      - model-data:/app/models
+    networks:
+      - cybershield-network
+    container_name: cybershield-backend
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - cybershield-network
+    container_name: cybershield-mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=cybershield_db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  cybershield-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
+  model-data:
+    driver: local
