@@ -1,0 +1,28 @@
+# Testing requirements
+pytest==7.4.3
+pytest-cov==4.1.0
+httpx==0.25.0
+
+# Core dependencies
+fastapi==0.115.8
+uvicorn==0.34.0
+pydantic==2.10.6
+firebase-admin==6.6.0
+python-jose==3.3.0
+bcrypt==4.2.1
+email_validator==2.2.0
+
+# Data Processing (updated versions)
+numpy>=1.26.0
+pandas>=2.1.0
+scikit-learn>=1.3.0
+
+# Database
+pymongo==4.7.0
+
+# Testing specific
+pytest-asyncio==0.23.5
+
+# HTTP and Network
+aiohttp==3.11.12
+requests==2.32.3

@@ -3,8 +3,6 @@ print(sys.path)
 
 from auth_email import router as auth_email_router  # Changed import
 from auth_phone import router as auth_phone_router # Changed import
-from security_dashboard import router as security_dashboard_router
-
 from pymongo import MongoClient
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Depends
@@ -51,16 +49,16 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://cybershield-frontend"],    
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include authentication routers
 app.include_router(auth_email_router, prefix="/auth/email", tags=["email_auth"])
 app.include_router(auth_phone_router, prefix="/auth/phone", tags=["phone_auth"])
-app.include_router(security_dashboard_router, prefix="/api")
+
 # Define a model for the incoming text
 class AnalysisRequest(BaseModel):
     text: str

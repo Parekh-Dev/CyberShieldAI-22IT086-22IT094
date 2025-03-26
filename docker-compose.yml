@@ -8,7 +8,7 @@ services:
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=/api
+      - REACT_APP_API_URL=http://localhost:8000
     networks:
       - cybershield-network
     container_name: cybershield-frontend
@@ -23,9 +23,11 @@ services:
       mongodb:
         condition: service_healthy
     environment:
-      - MONGO_URI=mongodb://cybershield-mongodb:27017/cybershield_db
+      - MONGO_URI=mongodb://mongodb:27017/cybershield_db
       # Update this to reference the correct path inside the container
       - FIREBASE_CREDENTIALS=/app/cybershieldai-firebase-adminsdk-fbsvc-36a8d0d55c.json
+      - CORS_ORIGINS=http://localhost:3000
+
     volumes:
       - ./backend:/app 
       # Remove this line - the file is already in the backend directory which we're mounting as /app
