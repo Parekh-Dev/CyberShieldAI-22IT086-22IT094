@@ -37,3 +37,7 @@ cybershield-react/nginx/ssl/*.key
 cybershield-react/nginx/ssl/*.pem
 *.key
 *.pem
+ssl/*.key
+
+ssl/*.pem
+
