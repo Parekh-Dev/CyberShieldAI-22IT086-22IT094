@@ -37,17 +37,20 @@ In future development phases, we plan to:
 
 ### Screenshots
 
+#### Hosting Configuration on Netlify
+![Netlify Hosting Configuration](docs/images/Hosting_congiguration.png)
+
 #### Home Page
-![CyberShield AI Home Page](docs/home.png)
-
-#### Login Screen
-![CyberShield AI Login Screen](docs/login.png)
-
-#### Registration Page
-![CyberShield AI Registration](docs/images/Register.png)
+![CyberShield AI Home Page](docs/images/home.png)
 
 #### About Page
 ![CyberShield AI About](docs/images/about.png)
 
-#### Hosting Configuration
-![Netlify Hosting Configuration](docs/images/Hosting_congiguration.png)
+#### Registration Page
+![CyberShield AI Registration](docs/images/Register.png)
+
+#### Login Screen
+![CyberShield AI Login Screen](docs/images/login.png)
+
+#### Content Analysis Dashboard
+![CyberShield AI Dashboard](docs/images/Content_analyses%20dashboard.png)
