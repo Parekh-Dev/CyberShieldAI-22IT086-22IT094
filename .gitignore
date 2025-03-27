@@ -32,3 +32,8 @@ cyber_env/
 # Local development files
 *.log
 .DS_Store
+
+cybershield-react/nginx/ssl/*.key
+cybershield-react/nginx/ssl/*.pem
+*.key
+*.pem
