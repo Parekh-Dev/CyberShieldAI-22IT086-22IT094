@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-// ...existing code...
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,36 +12,59 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
+    console.log("Login form submitted with email:", email);
+    
     try {
+      console.log("Calling login function...");
       const result = await login(email, password);
-
-      if (result.success) {
+      console.log("Login function returned:", result);
+  
+      if (result && result.success) {
+        console.log("Login successful, navigating to dashboard...");
         navigate('/dashboard');
       } else {
-        showAlert(result.message);
+        console.warn("Login completed but success flag is false or missing:", result);
+        // Convert any type of error message to string
+        const errorMessage = typeof result?.message === 'string' 
+          ? result.message
+          : (result?.message instanceof Error 
+              ? result.message.message 
+              : JSON.stringify(result?.message || "Unknown error"));
+        
+        showAlert(errorMessage);
       }
     } catch (error) {
-      console.error('Error:', error);
-      showAlert('Unable to connect to the server. Please try again later.');
+      console.error('Login error:', error);
+      // Convert error to string regardless of type
+      const errorMessage = error instanceof Error
+        ? error.message
+        : (typeof error === 'string' 
+            ? error 
+            : JSON.stringify(error));
+      
+      showAlert(errorMessage || 'Unable to connect to the server. Please try again later.');
     }
   };
 
   const showAlert = (errorMessage) => {
     let title, message, type;
+    
+    // Ensure errorMessage is always a string
+    const errorStr = String(errorMessage);
 
-    if (errorMessage.includes('not found')) {
+    if (errorStr.includes('not found')) {
       type = 'warning';
       title = 'Account Not Found';
       message = 'We couldn\'t find an account with this email address. Please check your email or create a new account.';
-    } else if (errorMessage.includes('password')) {
+    } else if (errorStr.includes('password')) {
       type = 'danger';
       title = 'Incorrect Password';
       message = 'The password you entered is incorrect. Please try again or use the "Forgot Password" link.';
     } else {
       type = 'danger';
       title = 'Login Error';
-      message = errorMessage;
+      message = errorStr;
     }
 
     setAlert({ 
@@ -51,6 +74,9 @@ const Login = () => {
       message 
     });
   };
+
+  // Rest of component remains the same
+  // ...
 
   const closeAlert = () => {
     setAlert({ ...alert, show: false });

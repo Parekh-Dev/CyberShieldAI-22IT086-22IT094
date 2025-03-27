@@ -1,43 +1,103 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_URL = '/api';
 
-    export const authService = {
-        register: async (email, password) => {
-            const formData = new FormData();
+export const authService = {
+    register: async (email, password) => {
+        try {
+            // Use URLSearchParams for proper form encoding
+            const formData = new URLSearchParams();
             formData.append('email', email);
             formData.append('password', password);
     
             const response = await fetch(`${API_URL}/auth/email/register`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
                 body: formData,
             });
     
-            const data = await response.json();
+            // Safe parsing of response
+            const text = await response.text();
+            let data;
+            
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error("Invalid JSON response:", text.substring(0, 100));
+                throw new Error("Server returned invalid response");
+            }
     
             if (!response.ok) {
                 throw new Error(data.detail || 'Registration failed');
             }
     
             return data;
-        },
+        } catch (error) {
+            console.error("Registration error:", error);
+            throw error;
+        }
+    },
     
-        login: async (email, password) => {
-            const formData = new FormData();
+    login: async (email, password) => {
+        try {
+            console.log("Attempting login with:", email);
+            
+            // Use URLSearchParams for proper form data encoding
+            const formData = new URLSearchParams();
             formData.append('email', email);
             formData.append('password', password);
-    
+            
             const response = await fetch(`${API_URL}/auth/email/login`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
                 body: formData,
             });
-    
-            const data = await response.json();
-    
-            if (!response.ok) {
-                throw new Error(data.detail || 'Login failed');
+            
+            // Get raw response for debugging
+            const text = await response.text();
+            console.log("Raw API response:", text);
+            
+            // Try to parse as JSON
+            let data;
+            try {
+                data = JSON.parse(text);
+                console.log("Parsed API response structure:", JSON.stringify(data, null, 2));
+                // Check fields that might contain token
+                console.log("Available top-level fields:", Object.keys(data));
+                
+                // Adjust the data structure to ensure token is at the top level
+                // Example - if token is nested like data.access_token or data.auth.token
+                if (!data.token) {
+                    if (data.access_token) {
+                        data.token = data.access_token;
+                    } else if (data.auth && data.auth.token) {
+                        data.token = data.auth.token;
+                    } else if (data.jwt) {
+                        data.token = data.jwt;
+                    }
+                }
+                
+            } catch (e) {
+                console.error("Failed to parse response:", text);
+                throw new Error(`Server returned invalid response: ${text.substring(0, 50)}...`);
             }
-    
+            
+            // Handle both successful and error responses
+            if (!response.ok) {
+                const errorMessage = data.detail || JSON.stringify(data) || 'Login failed';
+                console.error("Login error from server:", errorMessage);
+                throw new Error(errorMessage);
+            }
+            
+            console.log("Login successful:", data);
             return data;
+        } catch (error) {
+            console.error("Login error:", error);
+            throw error;
         }
+    },
 };
 
 export const contentService = {
@@ -51,7 +111,16 @@ export const contentService = {
                 body: JSON.stringify({ content }),
             });
 
-            const data = await response.json();
+            // Safe parsing of response
+            const text = await response.text();
+            let data;
+            
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error("Invalid JSON response:", text.substring(0, 100));
+                throw new Error("Analysis failed: Invalid response");
+            }
 
             if (!response.ok) {
                 throw new Error(data.detail || 'Analysis failed');

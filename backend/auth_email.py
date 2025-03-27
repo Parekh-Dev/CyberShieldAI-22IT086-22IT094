@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from security_logger import security_logger
 import bcrypt
 from datetime import datetime
+import pytz  # Add this import for timezone conversion
 from fastapi.responses import JSONResponse, RedirectResponse
 from typing import Optional
 import logging
@@ -432,11 +433,17 @@ async def login_user(
         if not log_id:
             logger.warning(f"Failed to log successful login for {email}")
         
+        # Convert UTC time to IST for timestamp
+        utc_now = datetime.utcnow()
+        ist_timezone = pytz.timezone('Asia/Kolkata')
+        ist_time = utc_now.replace(tzinfo=pytz.UTC).astimezone(ist_timezone)
+        ist_timestamp = ist_time.strftime('%Y-%m-%d %H:%M:%S.%f')
+        
         return JSONResponse(
             content={
                 "message": "Login successful",
                 "email": email,
-                "timestamp": str(datetime.utcnow()),
+                "timestamp": ist_timestamp,  # Now using IST timestamp
                 "status": "success"
             }, 
             status_code=200
