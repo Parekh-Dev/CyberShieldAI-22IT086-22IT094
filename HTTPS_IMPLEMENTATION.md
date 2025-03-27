@@ -4,7 +4,7 @@
 CyberShield AI implements HTTPS with self-signed certificates to secure communication between client and server.
 
 ## Implementation Details
-
+ Access your frontend at http://localhost
 ### Certificate Location
 - Self-signed certificates placed in ssl/ directory (placeholders in repository)
 - Private keys excluded from repository for security

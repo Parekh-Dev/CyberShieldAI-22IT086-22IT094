@@ -11,7 +11,7 @@ CyberShield AI implements a comprehensive backup and recovery system to ensure d
 ## Implementation
 
 ### Backup Script
-The system includes a fully functional backup script located at ackup-tools/backup.sh that:
+The system includes a fully functional backup script located at `backup-tools/backup.sh` that:
 - Creates timestamped backups
 - Dumps MongoDB data
 - Backs up configuration files
@@ -19,7 +19,7 @@ The system includes a fully functional backup script located at ackup-tools/bac
 - Implements a 30-day retention policy
 
 ### Restore Capability
-The restore script at ackup-tools/restore.sh allows for:
+The restore script at `backup-tools/restore.sh` allows for:
 - Complete database restoration
 - Recovery of configuration files
 - Verification of restored data
@@ -27,7 +27,7 @@ The restore script at ackup-tools/restore.sh allows for:
 ## Execution Instructions
 
 ### On Linux/Mac
-\\\ash
+```bash
 # Make scripts executable
 chmod +x backup-tools/*.sh
 
@@ -36,32 +36,34 @@ chmod +x backup-tools/*.sh
 
 # Restore from backup
 ./backup-tools/restore.sh backups/20240327_120000.tar.gz
-\\\
 
 ### On Windows
-\\\
+
 # Run backup using batch file
 backup-tools\backup.bat
 
 # For restore, use WSL
 wsl bash ./backup-tools/restore.sh backups/20240327_120000.tar.gz
-\\\
 
-## Scheduling
-For production environments, backups should be scheduled:
+# PowerShell alternative (for systems without WSL)
+./backup-tools/backup.ps1
 
-### Linux Cron Job
-\\\ash
-# Add to crontab (daily at 2 AM)
-0 2 * * * cd /path/to/cybershield && ./backup-tools/backup.sh >> /var/log/cybershield-backup.log 2>&1
-\\\
+# View the latest backup
+$latest_backup = (Get-ChildItem -Path ./backups -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+dir $latest_backup
 
-### Windows Task Scheduler
-1. Open Task Scheduler
-2. Create Basic Task
-3. Set trigger to run daily at 2 AM
-4. Action: Start a program
-5. Program: C:\path\to\cybershield\backup-tools\backup.bat
+# Restore from backup with PowerShell
+./backup-tools/restore.ps1 -BackupDir $latest_backup
 
-## Recovery Testing
-Monthly recovery tests should be performed to validate backup integrity.
+### MongoDB Test Commands
+
+# Create test data in MongoDB
+docker exec -it cybershield-mongodb mongosh --eval "use cybershield_db; db.backup_demo.insertOne({name: 'Test Data', timestamp: new Date(), value: 'Original value before backup'}); db.backup_demo.find();"
+
+# Modify data (simulate data loss)
+docker exec -it cybershield-mongodb mongosh --eval "use cybershield_db; db.backup_demo.updateOne({name: 'Test Data'}, {\$set: {value: 'CHANGED VALUE - we need to restore!'}}); db.backup_demo.find();"
+
+# Verify the restore
+docker exec -it cybershield-mongodb mongosh --eval "use cybershield_db; db.backup_demo.find();"
+
+
